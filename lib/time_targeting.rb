@@ -6,10 +6,17 @@ require "csv"
 #DATE ALLOWS ME TO CONVERT STRINGS INTO DATE OBJECTS
 require "date"
 
-def collect_reg_hours(date)
-  hours = []
-  hours.push(DateTime.strptime(date, '%m/%d/%y %H:%M'))
-  hours
+def tabulate_frequency(hash, key)
+  if hash.has_key?(key)
+    hash[key] += 1
+  else
+    hash[key] = 1
+  end
+  hash
+end
+
+def sort_hash(hash)
+  hash.sort_by {|key,value| value}.reverse!.to_h
 end
 
 puts "EventManager Initialized!"
@@ -24,15 +31,19 @@ contents = CSV.open "event_attendees.csv", headers: true, header_converters: :sy
 template_letter = File.read "form_letter.erb"
 
 hours_frequency = Hash.new
+weekday_frequency = Hash.new
 
 contents.each do |row|
+  #USING DATETIME TO FIND THE HOUR OF REGISTRATION OF EACH PERSON
   hour_registered = DateTime.strptime(row[:regdate], '%m/%d/%y %H:%M').hour
 
-  if hours_frequency.has_key?(hour_registered)
-    hours_frequency[hour_registered] += 1
-  else
-    hours_frequency[hour_registered] = 1
-  end
+  #USNG DATE TO FIND THE DAY OF THE WEEK OF REGISTRATION OF EACH PERSON
+  weekday_registered = DateTime.strptime(row[:regdate], '%m/%d/%y %H:%M').wday
+
+  #TABULATING HOUR FREQUENCY INTO A HASH
+  hours_frequency = tabulate_frequency(hours_frequency, hour_registered)
+  weekday_frequency = tabulate_frequency(weekday_frequency, weekday_registered)
 end
 
-puts hours_frequency.sort_by { |hour, frequency| frequency}.reverse!.to_h
+puts sort_hash(hours_frequency)
+puts sort_hash(weekday_frequency)
